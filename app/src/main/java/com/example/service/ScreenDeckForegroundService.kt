@@ -122,10 +122,6 @@ class ScreenDeckForegroundService : Service() {
         super.onDestroy()
     }
 
-    fun setKeyboardActive(active: Boolean) {
-        overlayEngine.setKeyboardActive(active)
-    }
-
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun onScreenOff() {
