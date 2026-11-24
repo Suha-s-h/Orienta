@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Orienta</string>
+    <string name="accessibility_service_label">Orienta Auto-Switch &amp; Fullscreen</string>
+    <string name="accessibility_service_description">Detects which app is currently open so Orienta can automatically apply your saved rotation and fullscreen rules, and enables seamless fullscreen immersive overlays without root or ADB.</string>
+    <string name="tile_rotation_label">Rotation Lock</string>
+    <string name="tile_fullscreen_label">Fullscreen Mode</string>
+    <string name="notif_channel_name">Orienta Control Bar</string>
+    <string name="notif_channel_desc">Persistent quick-toggle bar for global screen rotation lock and fullscreen immersive mode.</string>
+    <string name="tab_deck">Deck</string>
+    <string name="tab_apps">App Rules</string>
+    <string name="tab_setup">Controls</string>
+    <string name="guard_master_title">Global Guard</string>
+    <string name="guard_active_subtitle">Overriding all apps with active lock</string>
+    <string name="guard_standby_subtitle">Standby — tap to enforce across all apps</string>
+    <string name="section_rotation_matrix">ROTATION MATRIX</string>
+    <string name="section_fullscreen_matrix">FULLSCREEN IMMERSIVE</string>
+    <string name="section_quick_presets">QUICK PRESETS</string>
+    <string name="action_test_immersive">Live Preview</string>
+    <string name="action_exit_immersive">Exit Preview</string>
+    <string name="action_grant">Grant</string>
+    <string name="action_open_settings">Open Settings</string>
+    <string name="action_copy_adb">Copy Command</string>
+    <string name="action_verify">Verify Now</string>
+    <string name="search_apps_hint">Search installed apps…</string>
+    <string name="empty_rules_title">No per-app rules yet</string>
+    <string name="empty_rules_body">Tap any installed app in All Apps to assign automatic rotation and fullscreen modes whenever it launches.</string>
+</resources>
