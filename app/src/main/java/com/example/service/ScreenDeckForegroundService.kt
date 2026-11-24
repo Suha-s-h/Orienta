@@ -37,6 +37,7 @@ class ScreenDeckForegroundService : Service() {
 
     private var stateCollectionJob: Job? = null
     private var isScreenOn = true
+    private var isShuttingDown = false
 
     // Cache notification state to avoid redundant rebuilds
     private var lastNotifRotation: RotationMode? = null
@@ -92,10 +93,17 @@ class ScreenDeckForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (isShuttingDown) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
         val state = controller.runtimeState.value
         if (!state.preferences.masterEnabled) {
             try {
                 ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                val manager = getSystemService(NotificationManager::class.java)
+                manager?.cancel(NOTIFICATION_ID)
+                manager?.cancelAll()
             } catch (_: Exception) {}
             stopSelf()
             return START_NOT_STICKY
@@ -107,19 +115,51 @@ class ScreenDeckForegroundService : Service() {
     }
 
     override fun onDestroy() {
+        isShuttingDown = true
         if (activeInstance === this) {
             activeInstance = null
         }
+        stateCollectionJob?.cancel()
+        stateCollectionJob = null
+        serviceScope.cancel()
         try {
             ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+            val manager = getSystemService(NotificationManager::class.java)
+            manager?.cancel(NOTIFICATION_ID)
+            manager?.cancelAll()
         } catch (_: Exception) {}
-        stateCollectionJob?.cancel()
-        serviceScope.cancel()
         try { unregisterReceiver(screenReceiver) } catch (_: Exception) {}
         overlayEngine.releaseAll()
         floatingDeck.hide()
         controller.onServiceRunningChanged(false)
         super.onDestroy()
+    }
+
+    fun shutdownAndClearNotification() {
+        isShuttingDown = true
+        stateCollectionJob?.cancel()
+        stateCollectionJob = null
+        try {
+            overlayEngine.releaseAll()
+            floatingDeck.hide()
+            ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+            val manager = getSystemService(NotificationManager::class.java)
+            manager?.cancel(NOTIFICATION_ID)
+            manager?.cancelAll()
+        } catch (_: Exception) {}
+        stopSelf()
+    }
+
+    fun pauseImmersiveForKeyboard() {
+        overlayEngine.pauseForKeyboard()
+    }
+
+    fun resumeImmersiveFromKeyboard() {
+        overlayEngine.resumeFromKeyboard()
+    }
+
+    fun reapplyImmersiveFlags() {
+        overlayEngine.reapplyImmersiveFlags()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -154,6 +194,9 @@ class ScreenDeckForegroundService : Service() {
     }
 
     private fun applyRuntimeState(state: DeckRuntimeState) {
+        if (isShuttingDown || !state.preferences.masterEnabled) {
+            return
+        }
         val enforceRotation = state.preferences.guardEnabled || state.activeAppRulePackage != null
         overlayEngine.applyState(
             enforceRotation = enforceRotation,
@@ -202,6 +245,9 @@ class ScreenDeckForegroundService : Service() {
 
     /** Only rebuild and post the notification when displayed values actually change. */
     private fun updateNotificationIfChanged(state: DeckRuntimeState) {
+        if (isShuttingDown || !state.preferences.masterEnabled) {
+            return
+        }
         val currentRotation = state.effectiveRotationMode
         val currentImmersiveTitle = state.effectiveImmersiveMode.title
         val currentGuard = state.preferences.guardEnabled

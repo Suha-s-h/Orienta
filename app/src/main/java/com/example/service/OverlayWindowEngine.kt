@@ -36,6 +36,7 @@ class OverlayWindowEngine(
     private var currentRotation: RotationMode? = null
     private var currentImmersive: ImmersiveMode? = null
     private var currentMaskEnabled: Boolean = false
+    private var isPausedForKeyboard: Boolean = false
 
     private val overlayWindowType: Int
         get() = when {
@@ -66,7 +67,12 @@ class OverlayWindowEngine(
                 RotationMode.AUTO_SYSTEM
             }
             applyRotationOnMain(targetRotation)
-            applyImmersiveOnMain(immersiveMode, oledEdgeMaskEnabled)
+            if (isPausedForKeyboard) {
+                currentImmersive = immersiveMode
+                currentMaskEnabled = oledEdgeMaskEnabled
+            } else {
+                applyImmersiveOnMain(immersiveMode, oledEdgeMaskEnabled)
+            }
         }
     }
 
@@ -75,6 +81,7 @@ class OverlayWindowEngine(
     }
 
     private fun releaseAllOnMain() {
+        isPausedForKeyboard = false
         removeViewSafe(rotationView)
         rotationView = null
         currentRotation = null
@@ -153,6 +160,7 @@ class OverlayWindowEngine(
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
             WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS or
+            WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM or
             if (mode.hidesStatusBar) {
                 @Suppress("DEPRECATION")
                 WindowManager.LayoutParams.FLAG_FULLSCREEN
@@ -177,7 +185,7 @@ class OverlayWindowEngine(
 
         val host = immersiveHostView ?: View(context).apply {
             isClickable = false
-            isFocusable = true
+            isFocusable = false
             isFocusableInTouchMode = false
             setBackgroundColor(Color.TRANSPARENT)
             setOnApplyWindowInsetsListener { v, insets ->
@@ -208,6 +216,7 @@ class OverlayWindowEngine(
 
     fun reapplyImmersiveFlags() {
         mainHandler.post {
+            if (isPausedForKeyboard) return@post
             val host = immersiveHostView ?: return@post
             val mode = currentImmersive ?: return@post
             if (mode.isImmersiveActive) {
@@ -215,6 +224,31 @@ class OverlayWindowEngine(
             }
         }
     }
+
+    fun pauseForKeyboard() {
+        mainHandler.post {
+            if (isPausedForKeyboard) return@post
+            isPausedForKeyboard = true
+            removeViewSafe(immersiveHostView)
+            immersiveHostView = null
+        }
+    }
+
+    fun resumeFromKeyboard() {
+        mainHandler.post {
+            if (!isPausedForKeyboard) return@post
+            isPausedForKeyboard = false
+            val mode = currentImmersive
+            if (mode != null && mode.isImmersiveActive) {
+                val targetMode = mode
+                currentImmersive = null // Force re-creation
+                applyImmersiveOnMain(targetMode, currentMaskEnabled)
+            }
+        }
+    }
+
+    val isImmersivePausedForKeyboard: Boolean
+        get() = isPausedForKeyboard
 
     private fun buildEdgeMaskParams(heightPx: Int, gravityEdge: Int): WindowManager.LayoutParams {
         return WindowManager.LayoutParams(
