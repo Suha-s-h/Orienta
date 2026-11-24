@@ -52,14 +52,27 @@ object SystemScreenBridge {
         ) == PackageManager.PERMISSION_GRANTED
         if (!granted) return false
         return try {
+            val value = when (immersiveMode) {
+                ImmersiveMode.NORMAL -> null
+                ImmersiveMode.HIDE_STATUS -> "immersive.status=*"
+                ImmersiveMode.HIDE_NAVIGATION -> "immersive.navigation=*"
+                ImmersiveMode.FULL_IMMERSIVE -> "immersive.full=*"
+            }
             Settings.Global.putString(
                 context.contentResolver,
                 "policy_control",
-                immersiveMode.policyControlValue
+                value
             )
             true
         } catch (_: Exception) {
-            false
+            try {
+                if (immersiveMode == ImmersiveMode.NORMAL) {
+                    Settings.Global.putString(context.contentResolver, "policy_control", "")
+                }
+                true
+            } catch (_: Exception) {
+                false
+            }
         }
     }
 }

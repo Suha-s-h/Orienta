@@ -191,50 +191,14 @@ class OverlayWindowEngine(
 
         applySystemUiFlagsToView(host, mode)
 
-        if (oledEdgeMaskEnabled && mode.hidesStatusBar) {
-            val statusHeight = getSystemBarHeightPx("status_bar_height", fallbackDp = 28)
-            val maskParams = buildEdgeMaskParams(heightPx = statusHeight, gravityEdge = Gravity.TOP)
-            val existingStatus = statusMaskView
-            if (existingStatus == null) {
-                val view = View(context).apply {
-                    setBackgroundColor(Color.BLACK)
-                    isClickable = false
-                    isFocusable = false
-                }
-                if (addViewSafe(view, maskParams)) {
-                    statusMaskView = view
-                }
-            } else {
-                updateViewSafe(existingStatus, maskParams)
-            }
-        } else {
-            removeViewSafe(statusMaskView)
-            statusMaskView = null
-        }
-
-        if (oledEdgeMaskEnabled && mode.hidesNavBar) {
-            val navHeight = getSystemBarHeightPx("navigation_bar_height", fallbackDp = 24)
-            val maskParams = buildEdgeMaskParams(heightPx = navHeight, gravityEdge = Gravity.BOTTOM)
-            val existingNav = navMaskView
-            if (existingNav == null) {
-                val view = View(context).apply {
-                    setBackgroundColor(Color.BLACK)
-                    isClickable = false
-                    isFocusable = false
-                }
-                if (addViewSafe(view, maskParams)) {
-                    navMaskView = view
-                }
-            } else {
-                updateViewSafe(existingNav, maskParams)
-            }
-        } else {
-            removeViewSafe(navMaskView)
-            navMaskView = null
-        }
+        // Clean up any edge masks - system bars are controlled via native policy_control
+        removeViewSafe(statusMaskView)
+        statusMaskView = null
+        removeViewSafe(navMaskView)
+        navMaskView = null
 
         currentImmersive = mode
-        currentMaskEnabled = oledEdgeMaskEnabled
+        currentMaskEnabled = false
     }
 
     private fun buildEdgeMaskParams(heightPx: Int, gravityEdge: Int): WindowManager.LayoutParams {

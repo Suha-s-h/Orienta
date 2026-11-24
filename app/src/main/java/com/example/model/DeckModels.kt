@@ -111,7 +111,7 @@ enum class ImmersiveMode(
         description = "Show standard system status and navigation bars",
         hidesStatusBar = false,
         hidesNavBar = false,
-        policyControlValue = "null*"
+        policyControlValue = ""
     ),
     HIDE_STATUS(
         shortLabel = "STATUS",
@@ -233,7 +233,7 @@ data class DeckPreferences(
     val floatingSnapToEdge: Boolean = true,
     val startOnBoot: Boolean = false,
     val syncSystemAutoRotate: Boolean = true,
-    val oledEdgeMaskEnabled: Boolean = true,
+    val oledEdgeMaskEnabled: Boolean = false,
     val hapticsEnabled: Boolean = true
 )
 
