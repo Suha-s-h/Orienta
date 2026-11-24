@@ -29,11 +29,19 @@ class ForegroundAppAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event == null || event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
-        val pkg = event.packageName?.toString()?.takeIf { it.isNotBlank() } ?: return
-        if (IGNORED_PACKAGES.contains(pkg)) return
-        val controller = (application as? ScreenDeckApplication)?.controller ?: return
-        controller.onForegroundAppChanged(pkg)
+        if (event == null) return
+        val eventType = event.eventType
+        if (eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+            eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED
+        ) return
+
+        val pkg = event.packageName?.toString()?.takeIf { it.isNotBlank() }
+        if (pkg != null && !IGNORED_PACKAGES.contains(pkg)) {
+            val controller = (application as? ScreenDeckApplication)?.controller
+            controller?.onForegroundAppChanged(pkg)
+        }
+        // Keep immersive flags enforced on top of newly focused foreground app
+        accessibilityOverlayEngine?.reapplyImmersiveFlags()
     }
 
     override fun onInterrupt() {
@@ -52,31 +60,15 @@ class ForegroundAppAccessibilityService : AccessibilityService() {
         super.onDestroy()
     }
 
-    private fun applyFallback(state: DeckRuntimeState, hasSystemOverlayPermission: Boolean) {
+    private fun applyImmersiveOverlay(state: DeckRuntimeState) {
         val engine = accessibilityOverlayEngine ?: return
-        if (hasSystemOverlayPermission) {
-            // Foreground service already owns the TYPE_APPLICATION_OVERLAY windows
-            engine.releaseAll()
-            return
-        }
-        val enforceRotation = state.preferences.guardEnabled || state.activeAppRulePackage != null
-        val shouldApply = (enforceRotation && state.effectiveRotationMode.isForcedLock) ||
-            state.effectiveImmersiveMode.isImmersiveActive
-        if (shouldApply) {
-            engine.applyState(
-                enforceRotation = enforceRotation,
-                rotationMode = state.effectiveRotationMode,
-                immersiveMode = state.effectiveImmersiveMode,
-                oledEdgeMaskEnabled = state.preferences.oledEdgeMaskEnabled
-            )
-        } else {
-            engine.applyState(
-                enforceRotation = false,
-                rotationMode = RotationMode.AUTO_SYSTEM,
-                immersiveMode = ImmersiveMode.NORMAL,
-                oledEdgeMaskEnabled = false
-            )
-        }
+        val shouldApply = state.effectiveImmersiveMode.isImmersiveActive
+        engine.applyState(
+            enforceRotation = false,
+            rotationMode = RotationMode.AUTO_SYSTEM,
+            immersiveMode = if (shouldApply) state.effectiveImmersiveMode else ImmersiveMode.NORMAL,
+            oledEdgeMaskEnabled = false
+        )
     }
 
     companion object {
@@ -98,7 +90,7 @@ class ForegroundAppAccessibilityService : AccessibilityService() {
             state: DeckRuntimeState,
             hasSystemOverlayPermission: Boolean
         ) {
-            activeInstance?.applyFallback(state, hasSystemOverlayPermission)
+            activeInstance?.applyImmersiveOverlay(state)
         }
     }
 }

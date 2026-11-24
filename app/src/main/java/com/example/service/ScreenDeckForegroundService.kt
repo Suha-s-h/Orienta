@@ -144,7 +144,7 @@ class ScreenDeckForegroundService : Service() {
             enforceRotation = enforceRotation,
             rotationMode = state.effectiveRotationMode,
             immersiveMode = state.effectiveImmersiveMode,
-            oledEdgeMaskEnabled = state.preferences.oledEdgeMaskEnabled
+            oledEdgeMaskEnabled = false
         )
         floatingDeck.update(state)
         updateNotificationIfChanged(state)

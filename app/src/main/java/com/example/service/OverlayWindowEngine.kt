@@ -153,6 +153,7 @@ class OverlayWindowEngine(
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+            WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS or
             if (mode.hidesStatusBar) {
                 @Suppress("DEPRECATION")
                 WindowManager.LayoutParams.FLAG_FULLSCREEN
@@ -161,8 +162,8 @@ class OverlayWindowEngine(
             }
 
         val hostParams = WindowManager.LayoutParams(
-            1,
-            1,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
             overlayWindowType,
             baseFlags,
             PixelFormat.TRANSLUCENT
@@ -172,13 +173,16 @@ class OverlayWindowEngine(
                 layoutInDisplayCutoutMode =
                     WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
             }
-            screenOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
 
         val host = immersiveHostView ?: View(context).apply {
             isClickable = false
             isFocusable = false
-            alpha = 0f
+            setBackgroundColor(Color.TRANSPARENT)
+            setOnApplyWindowInsetsListener { v, insets ->
+                currentImmersive?.let { applySystemUiFlagsToView(v, it) }
+                insets
+            }
         }
 
         if (immersiveHostView == null) {
@@ -191,7 +195,7 @@ class OverlayWindowEngine(
 
         applySystemUiFlagsToView(host, mode)
 
-        // Clean up any edge masks - system bars are controlled via native policy_control
+        // Clean up any edge masks
         removeViewSafe(statusMaskView)
         statusMaskView = null
         removeViewSafe(navMaskView)
@@ -199,6 +203,16 @@ class OverlayWindowEngine(
 
         currentImmersive = mode
         currentMaskEnabled = false
+    }
+
+    fun reapplyImmersiveFlags() {
+        mainHandler.post {
+            val host = immersiveHostView ?: return@post
+            val mode = currentImmersive ?: return@post
+            if (mode.isImmersiveActive) {
+                applySystemUiFlagsToView(host, mode)
+            }
+        }
     }
 
     private fun buildEdgeMaskParams(heightPx: Int, gravityEdge: Int): WindowManager.LayoutParams {
