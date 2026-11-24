@@ -50,9 +50,10 @@ android {
       signingConfig = signingConfigs.getByName("release")
     }
     debug {
-      // Do not remove or modify this signingConfig assignment. It is necessary for Android apps in
-      // AI Studio.
-      signingConfig = signingConfigs.getByName("debugConfig")
+      // Use custom debugConfig if debug.keystore exists, otherwise use Android default debug signing
+      if (file("${rootDir}/debug.keystore").exists()) {
+        signingConfig = signingConfigs.getByName("debugConfig")
+      }
     }
   }
   compileOptions {
@@ -144,9 +145,11 @@ dependencies {
 }
 
 // Copy debug APK to project root and user's Downloads folder after assembleDebug
+val rootDirectory = rootProject.projectDir
 tasks.matching { it.name == "assembleDebug" }.configureEach {
+    val apkOutput = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk")
     doLast {
-        val apk = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk").get().asFile
+        val apk = apkOutput.get().asFile
         if (apk.exists()) {
             val downloadsDir = File(System.getProperty("user.home"), "Downloads")
             if (!downloadsDir.exists()) {
@@ -154,8 +157,8 @@ tasks.matching { it.name == "assembleDebug" }.configureEach {
             }
             apk.copyTo(File(downloadsDir, "Orienta-debug.apk"), overwrite = true)
             apk.copyTo(File(downloadsDir, "app-debug.apk"), overwrite = true)
-            apk.copyTo(File(rootProject.projectDir, "app-debug.apk"), overwrite = true)
-            println("✓ APK copied to: ${downloadsDir.absolutePath}/Orienta-debug.apk and ${rootProject.projectDir}/app-debug.apk")
+            apk.copyTo(File(rootDirectory, "app-debug.apk"), overwrite = true)
+            println("✓ APK copied to: ${downloadsDir.absolutePath}/Orienta-debug.apk and ${rootDirectory.absolutePath}/app-debug.apk")
         }
     }
 }

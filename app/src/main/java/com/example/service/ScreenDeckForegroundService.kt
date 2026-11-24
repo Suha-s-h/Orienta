@@ -26,7 +26,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 class ScreenDeckForegroundService : Service() {
@@ -131,7 +130,6 @@ class ScreenDeckForegroundService : Service() {
         stateCollectionJob?.cancel()
         stateCollectionJob = serviceScope.launch {
             controller.runtimeState
-                .distinctUntilChanged()
                 .collect { state ->
                     if (isScreenOn) {
                         applyRuntimeState(state)
