@@ -23,8 +23,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Fullscreen
-import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -52,8 +50,6 @@ import com.example.model.RotationMode
 @Composable
 fun ViewportTelemetryStage(
     state: DeckRuntimeState,
-    livePreviewImmersive: Boolean,
-    onToggleLivePreview: () -> Unit,
     onResetAll: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -288,64 +284,35 @@ fun ViewportTelemetryStage(
 
                     Spacer(modifier = Modifier.height(2.dp))
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    // Reset All Overrides Action
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable(onClick = onResetAll)
+                            .testTag("reset_all_overrides_button"),
+                        shape = RoundedCornerShape(10.dp),
+                        color = colorScheme.surfaceContainerHigh,
+                        border = BorderStroke(1.dp, colorScheme.outlineVariant)
                     ) {
-                        // Live Immersive Tester Button
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(36.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .clickable(onClick = onToggleLivePreview)
-                                .testTag("live_immersive_preview_button"),
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (livePreviewImmersive) colorScheme.secondaryContainer else colorScheme.surfaceContainerHigh,
-                            border = BorderStroke(
-                                1.dp,
-                                if (livePreviewImmersive) colorScheme.secondary else colorScheme.outlineVariant
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Reset rotation and fullscreen to default",
+                                tint = colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
                             )
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    imageVector = if (livePreviewImmersive) Icons.Default.FullscreenExit else Icons.Default.Fullscreen,
-                                    contentDescription = if (livePreviewImmersive) "Exit fullscreen preview" else "Test fullscreen preview",
-                                    tint = if (livePreviewImmersive) colorScheme.secondary else colorScheme.onSurface,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = if (livePreviewImmersive) "Exit Test" else "Test Full",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = if (livePreviewImmersive) colorScheme.secondary else colorScheme.onSurface
-                                )
-                            }
-                        }
-
-                        // Quick Reset Button
-                        Surface(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .clickable(onClick = onResetAll)
-                                .testTag("reset_all_overrides_button"),
-                            shape = RoundedCornerShape(10.dp),
-                            color = colorScheme.surfaceContainerHigh,
-                            border = BorderStroke(1.dp, colorScheme.outlineVariant)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.Refresh,
-                                    contentDescription = "Reset rotation and fullscreen to default",
-                                    tint = colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "RESET OVERRIDES",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }

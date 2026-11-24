@@ -36,6 +36,7 @@ class OverlayWindowEngine(
     private var currentRotation: RotationMode? = null
     private var currentImmersive: ImmersiveMode? = null
     private var currentMaskEnabled: Boolean = false
+    private var isKeyboardActive: Boolean = false
 
     private val overlayWindowType: Int
         get() = when {
@@ -131,6 +132,25 @@ class OverlayWindowEngine(
         }
     }
 
+    fun setKeyboardActive(active: Boolean) {
+        mainHandler.post {
+            if (isKeyboardActive == active) return@post
+            isKeyboardActive = active
+
+            if (active) {
+                // Yield focus immediately so the soft keyboard (IME) can display and receive user input
+                removeViewSafe(immersiveHostView)
+                immersiveHostView = null
+            } else {
+                // Keyboard dismissed: restore immersive mode seamlessly
+                val mode = currentImmersive
+                if (mode != null && mode.isImmersiveActive) {
+                    applyImmersiveOnMain(mode, currentMaskEnabled)
+                }
+            }
+        }
+    }
+
     private fun applyImmersiveOnMain(mode: ImmersiveMode, oledEdgeMaskEnabled: Boolean) {
         if (mode == ImmersiveMode.NORMAL) {
             removeViewSafe(immersiveHostView)
@@ -144,12 +164,23 @@ class OverlayWindowEngine(
             return
         }
 
-        if (currentImmersive == mode && currentMaskEnabled == oledEdgeMaskEnabled && immersiveHostView != null) {
+        currentImmersive = mode
+        currentMaskEnabled = false
+
+        // If keyboard is currently active on screen, keep overlay yielded until typing finishes
+        if (isKeyboardActive) {
+            return
+        }
+
+        if (immersiveHostView != null) {
+            // Already attached and mode matches
+            applySystemUiFlagsToView(immersiveHostView!!, mode)
             return
         }
 
         val baseFlags = WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
             WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM or
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
@@ -177,7 +208,7 @@ class OverlayWindowEngine(
 
         val host = immersiveHostView ?: View(context).apply {
             isClickable = false
-            isFocusable = true
+            isFocusable = false
             isFocusableInTouchMode = false
             setBackgroundColor(Color.TRANSPARENT)
             setOnApplyWindowInsetsListener { v, insets ->
@@ -196,18 +227,16 @@ class OverlayWindowEngine(
 
         applySystemUiFlagsToView(host, mode)
 
-        // Clean up any edge masks
+        // Clean up any legacy edge masks
         removeViewSafe(statusMaskView)
         statusMaskView = null
         removeViewSafe(navMaskView)
         navMaskView = null
-
-        currentImmersive = mode
-        currentMaskEnabled = false
     }
 
     fun reapplyImmersiveFlags() {
         mainHandler.post {
+            if (isKeyboardActive) return@post
             val host = immersiveHostView ?: return@post
             val mode = currentImmersive ?: return@post
             if (mode.isImmersiveActive) {

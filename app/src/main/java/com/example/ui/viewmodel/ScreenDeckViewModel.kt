@@ -50,9 +50,6 @@ class ScreenDeckViewModel(application: Application) : AndroidViewModel(applicati
     private val _selectedFilter = MutableStateFlow(AppRulesFilter.ALL)
     val selectedFilter: StateFlow<AppRulesFilter> = _selectedFilter.asStateFlow()
 
-    private val _livePreviewImmersive = MutableStateFlow(false)
-    val livePreviewImmersive: StateFlow<Boolean> = _livePreviewImmersive.asStateFlow()
-
     private val _snackbarEvents = MutableSharedFlow<String>(extraBufferCapacity = 4)
     val snackbarEvents: SharedFlow<String> = _snackbarEvents.asSharedFlow()
 
@@ -111,10 +108,6 @@ class ScreenDeckViewModel(application: Application) : AndroidViewModel(applicati
 
     fun selectFilter(filter: AppRulesFilter) {
         _selectedFilter.value = filter
-    }
-
-    fun setLivePreviewImmersive(enabled: Boolean) {
-        _livePreviewImmersive.value = enabled
     }
 
     fun toggleGuard(enabled: Boolean) {
@@ -202,7 +195,6 @@ class ScreenDeckViewModel(application: Application) : AndroidViewModel(applicati
 
     fun disableAllOverrides() {
         controller.disableAllOverrides()
-        _livePreviewImmersive.value = false
         emitMessage("All overrides cleared")
     }
 

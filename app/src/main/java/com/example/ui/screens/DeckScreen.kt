@@ -23,7 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ScreenShare
 import androidx.compose.material.icons.filled.AutoMode
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.CropFree
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Layers
@@ -34,9 +33,7 @@ import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.StayCurrentLandscape
 import androidx.compose.material.icons.filled.StayCurrentPortrait
-import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.ViewAgenda
-import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.outlined.FullscreenExit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -46,20 +43,14 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.model.BuiltInPresets
@@ -67,19 +58,16 @@ import com.example.model.DeckPreset
 import com.example.model.DeckRuntimeState
 import com.example.model.ImmersiveMode
 import com.example.model.RotationMode
-import com.example.service.SystemScreenBridge
 import com.example.ui.components.ViewportTelemetryStage
 
 @Composable
 fun DeckScreen(
     state: DeckRuntimeState,
-    livePreviewImmersive: Boolean,
     onToggleGuard: (Boolean) -> Unit,
     onSelectRotation: (RotationMode) -> Unit,
     onSelectImmersive: (ImmersiveMode) -> Unit,
     onApplyPreset: (DeckPreset) -> Unit,
     onToggleFloating: (Boolean) -> Unit,
-    onToggleLivePreview: () -> Unit,
     onResetAll: () -> Unit,
     onOpenSetupTab: () -> Unit,
     modifier: Modifier = Modifier
@@ -202,11 +190,6 @@ fun DeckScreen(
         item {
             ViewportTelemetryStage(
                 state = state,
-                livePreviewImmersive = livePreviewImmersive,
-                onToggleLivePreview = {
-                    if (hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    onToggleLivePreview()
-                },
                 onResetAll = {
                     if (hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                     onResetAll()
@@ -386,82 +369,6 @@ fun DeckScreen(
                                     modifier = Modifier
                                         .weight(1f)
                                         .testTag("immersive_mode_${mode.name.lowercase()}")
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // ADB Permission callout for system-wide immersive (hiding status/nav bar across all apps)
-        if (!state.permissions.hasWriteSecureSettings) {
-            item {
-                val clipboard = LocalClipboardManager.current
-                val context = LocalContext.current
-                val adbCmd = remember(context.packageName) { SystemScreenBridge.buildAdbGrantCommand(context) }
-                var copied by remember { mutableStateOf(false) }
-
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .clickable {
-                            clipboard.setText(AnnotatedString(adbCmd))
-                            copied = true
-                        },
-                    shape = RoundedCornerShape(16.dp),
-                    color = colorScheme.secondaryContainer.copy(alpha = 0.25f),
-                    border = BorderStroke(1.dp, colorScheme.secondary.copy(alpha = 0.4f))
-                ) {
-                    Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Terminal,
-                                contentDescription = "ADB Grant",
-                                tint = colorScheme.secondary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Text(
-                                text = "System-Wide Immersive (Like Fullscreen Immersive)",
-                                style = MaterialTheme.typography.titleSmall,
-                                color = colorScheme.onSurface
-                            )
-                        }
-                        Text(
-                            text = "To hide navigation and status bars across all other apps, Android requires a one-time permission via ADB or Shizuku. Tap to copy the command:",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = colorScheme.onSurfaceVariant
-                        )
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = colorScheme.surfaceContainerHigh,
-                            border = BorderStroke(1.dp, colorScheme.outlineVariant)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = if (copied) "✓ Copied to clipboard! Run in ADB or Shizuku" else adbCmd,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = if (copied) colorScheme.primary else colorScheme.secondary,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.ContentCopy,
-                                    contentDescription = "Copy command",
-                                    tint = colorScheme.secondary,
-                                    modifier = Modifier.size(16.dp)
                                 )
                             }
                         }

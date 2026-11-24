@@ -90,7 +90,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             ScreenDeckTheme {
                 ScreenDeckAppRoot(
-                    onApplyActivityImmersivePreview = { active ->
+                    onApplyActivityImmersive = { active ->
                         applyActivityImmersive(active)
                     }
                 )
@@ -112,7 +112,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun ScreenDeckAppRoot(
-    onApplyActivityImmersivePreview: (Boolean) -> Unit,
+    onApplyActivityImmersive: (Boolean) -> Unit,
     viewModel: ScreenDeckViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -124,7 +124,6 @@ private fun ScreenDeckAppRoot(
     val isLoadingApps by viewModel.isLoadingApps.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedFilter by viewModel.selectedFilter.collectAsStateWithLifecycle()
-    val livePreviewImmersive by viewModel.livePreviewImmersive.collectAsStateWithLifecycle()
 
     var currentDestination by rememberSaveable { mutableStateOf(DeckDestination.DECK) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -150,10 +149,9 @@ private fun ScreenDeckAppRoot(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // Bind in-app Live Fullscreen Preview and active Immersive Mode to Activity WindowInsetsControllerCompat
-    LaunchedEffect(runtimeState.effectiveImmersiveMode, livePreviewImmersive) {
-        val shouldBeImmersive = livePreviewImmersive || runtimeState.effectiveImmersiveMode.isImmersiveActive
-        onApplyActivityImmersivePreview(shouldBeImmersive)
+    // Bind active Immersive Mode to Activity WindowInsetsControllerCompat
+    LaunchedEffect(runtimeState.effectiveImmersiveMode) {
+        onApplyActivityImmersive(runtimeState.effectiveImmersiveMode.isImmersiveActive)
     }
 
     // Collect ViewModel snackbar messages
@@ -263,15 +261,11 @@ private fun ScreenDeckAppRoot(
                     when (currentDestination) {
                         DeckDestination.DECK -> DeckScreen(
                             state = runtimeState,
-                            livePreviewImmersive = livePreviewImmersive,
                             onToggleGuard = viewModel::toggleGuard,
                             onSelectRotation = viewModel::selectRotationMode,
                             onSelectImmersive = viewModel::selectImmersiveMode,
                             onApplyPreset = viewModel::applyPreset,
                             onToggleFloating = viewModel::setFloatingDeckEnabled,
-                            onToggleLivePreview = {
-                                viewModel.setLivePreviewImmersive(!livePreviewImmersive)
-                            },
                             onResetAll = viewModel::disableAllOverrides,
                             onOpenSetupTab = { currentDestination = DeckDestination.SETUP },
                             modifier = contentModifier

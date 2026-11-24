@@ -1,8 +1,10 @@
 package com.example.service
 
+import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Process
 import com.example.ScreenDeckApplication
 import com.example.model.RotationMode
 
@@ -21,6 +23,21 @@ class DeckActionReceiver : BroadcastReceiver() {
             }
             ACTION_CYCLE_IMMERSIVE -> controller.cycleGlobalImmersiveMode()
             ACTION_STOP_ALL -> controller.disableAllOverrides()
+            ACTION_EXIT_APP -> {
+                // 1. Clear all active rotation locks and immersive overrides
+                controller.disableAllOverrides()
+
+                // 2. Stop the foreground service
+                val serviceIntent = Intent(context, ScreenDeckForegroundService::class.java)
+                context.stopService(serviceIntent)
+
+                // 3. Dismiss all notifications immediately
+                val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+                nm?.cancelAll()
+
+                // 4. Terminate process to eliminate all background battery consumption
+                Process.killProcess(Process.myPid())
+            }
         }
     }
 
@@ -29,6 +46,7 @@ class DeckActionReceiver : BroadcastReceiver() {
         const val ACTION_SET_ROTATION = "com.example.action.SET_ROTATION"
         const val ACTION_CYCLE_IMMERSIVE = "com.example.action.CYCLE_IMMERSIVE"
         const val ACTION_STOP_ALL = "com.example.action.STOP_ALL"
+        const val ACTION_EXIT_APP = "com.example.action.EXIT_APP"
         const val EXTRA_ROTATION_MODE = "extra_rotation_mode"
     }
 }

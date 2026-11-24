@@ -79,6 +79,7 @@ class ScreenDeckForegroundService : Service() {
         ensureNotificationChannel()
         startForegroundSafe(controller.runtimeState.value)
         controller.onServiceRunningChanged(true)
+        activeInstance = this
 
         // Register screen on/off receiver for battery optimization
         val filter = IntentFilter().apply {
@@ -98,6 +99,9 @@ class ScreenDeckForegroundService : Service() {
     }
 
     override fun onDestroy() {
+        if (activeInstance === this) {
+            activeInstance = null
+        }
         stateCollectionJob?.cancel()
         serviceScope.cancel()
         try { unregisterReceiver(screenReceiver) } catch (_: Exception) {}
@@ -105,6 +109,10 @@ class ScreenDeckForegroundService : Service() {
         floatingDeck.hide()
         controller.onServiceRunningChanged(false)
         super.onDestroy()
+    }
+
+    fun setKeyboardActive(active: Boolean) {
+        overlayEngine.setKeyboardActive(active)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -235,6 +243,9 @@ class ScreenDeckForegroundService : Service() {
             .setContentTitle("Orienta • ${state.activeSourceLabel}")
             .setContentText("${state.effectiveRotationMode.title}  |  ${state.effectiveImmersiveMode.title}")
 
+        val exitPendingIntent = actionPendingIntent(207, DeckActionReceiver.ACTION_EXIT_APP)
+        builder.addAction(0, "✕ EXIT", exitPendingIntent)
+
         if (state.preferences.notificationBarEnabled) {
             val views = buildRemoteViews(state)
             builder
@@ -280,6 +291,7 @@ class ScreenDeckForegroundService : Service() {
         views.setOnClickPendingIntent(R.id.btn_landscape, rotationPendingIntent(204, RotationMode.LANDSCAPE))
         views.setOnClickPendingIntent(R.id.btn_sensor, rotationPendingIntent(205, RotationMode.FULL_SENSOR))
         views.setOnClickPendingIntent(R.id.btn_immersive, actionPendingIntent(206, DeckActionReceiver.ACTION_CYCLE_IMMERSIVE))
+        views.setOnClickPendingIntent(R.id.btn_exit, actionPendingIntent(207, DeckActionReceiver.ACTION_EXIT_APP))
 
         return views
     }
@@ -311,5 +323,9 @@ class ScreenDeckForegroundService : Service() {
         const val ACTION_SYNC = "com.example.action.SYNC_DECK"
         private const val CHANNEL_ID = "orienta_control_bar"
         private const val NOTIFICATION_ID = 4041
+
+        @Volatile
+        var activeInstance: ScreenDeckForegroundService? = null
+            private set
     }
 }
