@@ -110,6 +110,11 @@ class ScreenDeckViewModel(application: Application) : AndroidViewModel(applicati
         _selectedFilter.value = filter
     }
 
+    fun setMasterEnabled(enabled: Boolean) {
+        controller.setMasterEnabled(enabled)
+        emitMessage(if (enabled) "Orienta engine activated" else "Orienta engine paused (Zero battery)")
+    }
+
     fun toggleGuard(enabled: Boolean) {
         controller.setGuardEnabled(enabled)
         if (enabled && !runtimeState.value.permissions.isRotationReady) {

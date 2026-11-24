@@ -22,6 +22,7 @@ private val Context.screenDeckDataStore: DataStore<Preferences> by preferencesDa
 class DeckPreferencesStore(private val context: Context) {
 
     private object Keys {
+        val MASTER_ENABLED = booleanPreferencesKey("master_enabled")
         val GUARD_ENABLED = booleanPreferencesKey("guard_enabled")
         val GLOBAL_ROTATION = stringPreferencesKey("global_rotation")
         val GLOBAL_IMMERSIVE = stringPreferencesKey("global_immersive")
@@ -38,6 +39,7 @@ class DeckPreferencesStore(private val context: Context) {
 
     val preferencesFlow: Flow<DeckPreferences> = context.screenDeckDataStore.data.map { prefs ->
         DeckPreferences(
+            masterEnabled = prefs[Keys.MASTER_ENABLED] ?: true,
             guardEnabled = prefs[Keys.GUARD_ENABLED] ?: false,
             globalRotationMode = RotationMode.fromNameOrDefault(prefs[Keys.GLOBAL_ROTATION]),
             globalImmersiveMode = ImmersiveMode.fromNameOrDefault(prefs[Keys.GLOBAL_IMMERSIVE]),
@@ -56,6 +58,7 @@ class DeckPreferencesStore(private val context: Context) {
     suspend fun update(transform: (DeckPreferences) -> DeckPreferences) {
         context.screenDeckDataStore.edit { mutable ->
             val current = DeckPreferences(
+                masterEnabled = mutable[Keys.MASTER_ENABLED] ?: true,
                 guardEnabled = mutable[Keys.GUARD_ENABLED] ?: false,
                 globalRotationMode = RotationMode.fromNameOrDefault(mutable[Keys.GLOBAL_ROTATION]),
                 globalImmersiveMode = ImmersiveMode.fromNameOrDefault(mutable[Keys.GLOBAL_IMMERSIVE]),
@@ -70,6 +73,7 @@ class DeckPreferencesStore(private val context: Context) {
                 hapticsEnabled = mutable[Keys.HAPTICS_ENABLED] ?: true
             )
             val next = transform(current)
+            mutable[Keys.MASTER_ENABLED] = next.masterEnabled
             mutable[Keys.GUARD_ENABLED] = next.guardEnabled
             mutable[Keys.GLOBAL_ROTATION] = next.globalRotationMode.name
             mutable[Keys.GLOBAL_IMMERSIVE] = next.globalImmersiveMode.name

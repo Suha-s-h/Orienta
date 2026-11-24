@@ -72,6 +72,20 @@ class ScreenDeckController(
         isRunning: Boolean,
         permissions: PermissionDiagnostics
     ): DeckRuntimeState {
+        if (!prefs.masterEnabled) {
+            return DeckRuntimeState(
+                preferences = prefs,
+                effectiveRotationMode = RotationMode.AUTO_SYSTEM,
+                effectiveImmersiveMode = ImmersiveMode.NORMAL,
+                activeSourceLabel = "Orienta Standby",
+                activeAppRulePackage = null,
+                foregroundPackage = fgPkg,
+                foregroundAppLabel = fgPkg?.let { repository.resolveAppLabel(it) },
+                isServiceRunning = isRunning,
+                permissions = permissions
+            )
+        }
+
         val matchingRule = if (fgPkg != null && fgPkg != context.packageName) {
             rules.firstOrNull { it.packageName == fgPkg && it.isEnabled }
         } else {
@@ -118,15 +132,18 @@ class ScreenDeckController(
     }
 
     private fun applySideEffects(state: DeckRuntimeState) {
-        val shouldKeepServiceAlive = state.preferences.guardEnabled ||
+        val masterOn = state.preferences.masterEnabled
+        val shouldKeepServiceAlive = masterOn && (
+            state.preferences.guardEnabled ||
             state.effectiveImmersiveMode.isImmersiveActive ||
             state.preferences.floatingDeckEnabled ||
             state.activeAppRulePackage != null
+        )
 
         SystemScreenBridge.syncSystemAutoRotate(
             context = context,
             rotationMode = state.effectiveRotationMode,
-            guardActive = state.preferences.guardEnabled || state.activeAppRulePackage != null,
+            guardActive = masterOn && (state.preferences.guardEnabled || state.activeAppRulePackage != null),
             syncEnabled = state.preferences.syncSystemAutoRotate
         )
         SystemScreenBridge.applyAdbImmersiveBoostIfPermitted(
@@ -146,6 +163,15 @@ class ScreenDeckController(
         }
 
         requestQuickSettingsTileUpdates()
+    }
+
+    fun setMasterEnabled(enabled: Boolean) {
+        scope.launch {
+            repository.updatePreferences { it.copy(masterEnabled = enabled) }
+            if (!enabled) {
+                stopForegroundService()
+            }
+        }
     }
 
     fun refreshPermissions() {

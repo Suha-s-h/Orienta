@@ -92,16 +92,27 @@ class ScreenDeckForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (isScreenOn) {
-            applyRuntimeState(controller.runtimeState.value)
+        val state = controller.runtimeState.value
+        if (!state.preferences.masterEnabled) {
+            try {
+                ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+            } catch (_: Exception) {}
+            stopSelf()
+            return START_NOT_STICKY
         }
-        return START_STICKY
+        if (isScreenOn) {
+            applyRuntimeState(state)
+        }
+        return START_NOT_STICKY
     }
 
     override fun onDestroy() {
         if (activeInstance === this) {
             activeInstance = null
         }
+        try {
+            ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+        } catch (_: Exception) {}
         stateCollectionJob?.cancel()
         serviceScope.cancel()
         try { unregisterReceiver(screenReceiver) } catch (_: Exception) {}
@@ -242,9 +253,6 @@ class ScreenDeckForegroundService : Service() {
             .setContentIntent(openAppIntent)
             .setContentTitle("Orienta • ${state.activeSourceLabel}")
             .setContentText("${state.effectiveRotationMode.title}  |  ${state.effectiveImmersiveMode.title}")
-
-        val exitPendingIntent = actionPendingIntent(207, DeckActionReceiver.ACTION_EXIT_APP)
-        builder.addAction(0, "✕ EXIT", exitPendingIntent)
 
         if (state.preferences.notificationBarEnabled) {
             val views = buildRemoteViews(state)

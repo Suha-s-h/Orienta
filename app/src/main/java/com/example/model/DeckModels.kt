@@ -223,6 +223,7 @@ object BuiltInPresets {
 }
 
 data class DeckPreferences(
+    val masterEnabled: Boolean = true,
     val guardEnabled: Boolean = false,
     val globalRotationMode: RotationMode = RotationMode.AUTO_SYSTEM,
     val globalImmersiveMode: ImmersiveMode = ImmersiveMode.NORMAL,

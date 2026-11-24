@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.AutoMode
 import androidx.compose.material.icons.filled.CropFree
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.ScreenLockLandscape
 import androidx.compose.material.icons.filled.ScreenLockPortrait
 import androidx.compose.material.icons.filled.ScreenLockRotation
@@ -64,6 +65,7 @@ import com.example.ui.components.ViewportTelemetryStage
 @Composable
 fun DeckScreen(
     state: DeckRuntimeState,
+    onToggleMaster: (Boolean) -> Unit,
     onToggleGuard: (Boolean) -> Unit,
     onSelectRotation: (RotationMode) -> Unit,
     onSelectImmersive: (ImmersiveMode) -> Unit,
@@ -137,6 +139,100 @@ fun DeckScreen(
                             color = if (floatingOn) colorScheme.secondary else colorScheme.onSurface
                         )
                     }
+                }
+            }
+        }
+
+        // Master Power Switch Card (In-app toggle to turn the entire engine ON or OFF)
+        item {
+            val masterOn = state.preferences.masterEnabled
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .clickable {
+                        if (hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onToggleMaster(!masterOn)
+                    }
+                    .testTag("master_power_card"),
+                shape = RoundedCornerShape(18.dp),
+                color = if (masterOn) colorScheme.surface else colorScheme.surfaceContainerLow,
+                border = BorderStroke(
+                    width = if (masterOn) 1.5.dp else 1.dp,
+                    color = if (masterOn) colorScheme.primary else colorScheme.outlineVariant
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                if (masterOn) colorScheme.primary.copy(alpha = 0.22f)
+                                else colorScheme.surfaceContainerHigh
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PowerSettingsNew,
+                            contentDescription = "Orienta Master Power Switch",
+                            tint = if (masterOn) colorScheme.primary else colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "ORIENTA ENGINE",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = colorScheme.onSurface
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(
+                                        if (masterOn) colorScheme.primary.copy(alpha = 0.2f)
+                                        else colorScheme.surfaceContainerHigh
+                                    )
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = if (masterOn) "ACTIVE" else "STANDBY",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (masterOn) colorScheme.primary else colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Text(
+                            text = if (masterOn) {
+                                "All background services, overlays & controls running"
+                            } else {
+                                "All overlays & services paused • Zero battery usage"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = masterOn,
+                        onCheckedChange = {
+                            if (hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onToggleMaster(it)
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = colorScheme.onPrimary,
+                            checkedTrackColor = colorScheme.primary,
+                            uncheckedThumbColor = colorScheme.onSurfaceVariant,
+                            uncheckedTrackColor = colorScheme.surfaceContainerHigh
+                        )
+                    )
                 }
             }
         }

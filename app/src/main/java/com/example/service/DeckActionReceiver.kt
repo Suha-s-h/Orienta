@@ -24,19 +24,19 @@ class DeckActionReceiver : BroadcastReceiver() {
             ACTION_CYCLE_IMMERSIVE -> controller.cycleGlobalImmersiveMode()
             ACTION_STOP_ALL -> controller.disableAllOverrides()
             ACTION_EXIT_APP -> {
-                // 1. Clear all active rotation locks and immersive overrides
+                // 1. Persist master power switch to OFF
+                controller.setMasterEnabled(false)
+
+                // 2. Clear all active rotation locks and immersive overrides
                 controller.disableAllOverrides()
 
-                // 2. Stop the foreground service
+                // 3. Stop the foreground service cleanly
                 val serviceIntent = Intent(context, ScreenDeckForegroundService::class.java)
                 context.stopService(serviceIntent)
 
-                // 3. Dismiss all notifications immediately
+                // 4. Dismiss all notifications immediately
                 val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
                 nm?.cancelAll()
-
-                // 4. Terminate process to eliminate all background battery consumption
-                Process.killProcess(Process.myPid())
             }
         }
     }

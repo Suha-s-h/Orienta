@@ -261,6 +261,7 @@ private fun ScreenDeckAppRoot(
                     when (currentDestination) {
                         DeckDestination.DECK -> DeckScreen(
                             state = runtimeState,
+                            onToggleMaster = viewModel::setMasterEnabled,
                             onToggleGuard = viewModel::toggleGuard,
                             onSelectRotation = viewModel::selectRotationMode,
                             onSelectImmersive = viewModel::selectImmersiveMode,
