@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.StayCurrentLandscape
 import androidx.compose.material.icons.filled.StayCurrentPortrait
 import androidx.compose.material.icons.filled.ViewAgenda
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.FullscreenExit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -159,7 +160,7 @@ fun DeckScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.WarningAmber,
+                            imageVector = Icons.Default.Warning,
                             contentDescription = "Permission required",
                             tint = colorScheme.error,
                             modifier = Modifier.size(22.dp)
