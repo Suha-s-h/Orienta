@@ -150,9 +150,10 @@ private fun ScreenDeckAppRoot(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // Bind in-app Live Fullscreen Preview toggle to Activity WindowInsetsControllerCompat
-    LaunchedEffect(livePreviewImmersive) {
-        onApplyActivityImmersivePreview(livePreviewImmersive)
+    // Bind in-app Live Fullscreen Preview and active Immersive Mode to Activity WindowInsetsControllerCompat
+    LaunchedEffect(runtimeState.effectiveImmersiveMode, livePreviewImmersive) {
+        val shouldBeImmersive = livePreviewImmersive || runtimeState.effectiveImmersiveMode.isImmersiveActive
+        onApplyActivityImmersivePreview(shouldBeImmersive)
     }
 
     // Collect ViewModel snackbar messages

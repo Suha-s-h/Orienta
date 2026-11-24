@@ -635,9 +635,9 @@ private fun WideImmersiveKeycap(
             .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        color = if (selected) colorScheme.secondaryContainer.copy(alpha = 0.65f) else colorScheme.surface,
+        color = if (selected) Color(0xFF133640) else colorScheme.surface,
         border = BorderStroke(
-            width = if (selected) 1.5.dp else 1.dp,
+            width = if (selected) 2.dp else 1.dp,
             color = if (selected) accent else colorScheme.outlineVariant
         )
     ) {
@@ -652,20 +652,33 @@ private fun WideImmersiveKeycap(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = title,
-                    tint = if (selected) accent else colorScheme.onSurface,
-                    modifier = Modifier.size(22.dp)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = title,
+                        tint = if (selected) accent else colorScheme.onSurface,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    if (selected) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(accent)
+                        )
+                    }
+                }
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
-                        .background(if (selected) accent.copy(alpha = 0.2f) else colorScheme.surfaceContainerHigh)
+                        .background(if (selected) accent.copy(alpha = 0.25f) else colorScheme.surfaceContainerHigh)
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = badge,
+                        text = if (selected) "✓ $badge" else badge,
                         style = MaterialTheme.typography.labelSmall,
                         color = if (selected) accent else colorScheme.onSurfaceVariant
                     )

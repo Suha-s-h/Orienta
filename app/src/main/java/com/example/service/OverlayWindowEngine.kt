@@ -148,9 +148,9 @@ class OverlayWindowEngine(
             return
         }
 
-        val baseFlags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+        val baseFlags = WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+            WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM or
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
             WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS or
@@ -177,7 +177,8 @@ class OverlayWindowEngine(
 
         val host = immersiveHostView ?: View(context).apply {
             isClickable = false
-            isFocusable = false
+            isFocusable = true
+            isFocusableInTouchMode = false
             setBackgroundColor(Color.TRANSPARENT)
             setOnApplyWindowInsetsListener { v, insets ->
                 currentImmersive?.let { applySystemUiFlagsToView(v, it) }

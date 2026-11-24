@@ -48,7 +48,7 @@ class DeckPreferencesStore(private val context: Context) {
             floatingSnapToEdge = prefs[Keys.FLOATING_SNAP] ?: true,
             startOnBoot = prefs[Keys.START_ON_BOOT] ?: false,
             syncSystemAutoRotate = prefs[Keys.SYNC_AUTO_ROTATE] ?: true,
-            oledEdgeMaskEnabled = prefs[Keys.OLED_EDGE_MASK] ?: true,
+            oledEdgeMaskEnabled = prefs[Keys.OLED_EDGE_MASK] ?: false,
             hapticsEnabled = prefs[Keys.HAPTICS_ENABLED] ?: true
         )
     }
@@ -66,7 +66,7 @@ class DeckPreferencesStore(private val context: Context) {
                 floatingSnapToEdge = mutable[Keys.FLOATING_SNAP] ?: true,
                 startOnBoot = mutable[Keys.START_ON_BOOT] ?: false,
                 syncSystemAutoRotate = mutable[Keys.SYNC_AUTO_ROTATE] ?: true,
-                oledEdgeMaskEnabled = mutable[Keys.OLED_EDGE_MASK] ?: true,
+                oledEdgeMaskEnabled = mutable[Keys.OLED_EDGE_MASK] ?: false,
                 hapticsEnabled = mutable[Keys.HAPTICS_ENABLED] ?: true
             )
             val next = transform(current)
