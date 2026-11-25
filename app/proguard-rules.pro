@@ -5,17 +5,17 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Room entities, DAOs, and database
+-keep class com.example.data.AppRuleEntity { *; }
+-keep class com.example.data.AppRuleDao { *; }
+-keep class com.example.data.ScreenDeckDatabase { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Accessibility service (referenced by manifest meta-data)
+-keep class com.example.service.ForegroundAppAccessibilityService { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Broadcast receivers
+-keep class com.example.service.BootCompletedReceiver { *; }
+-keep class com.example.service.DeckActionReceiver { *; }
+
+# Quick Settings tile services
+-keep class com.example.tile.** { *; }

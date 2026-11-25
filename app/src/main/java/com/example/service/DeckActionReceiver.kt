@@ -4,7 +4,6 @@ import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Process
 import com.example.ScreenDeckApplication
 import com.example.model.RotationMode
 
@@ -27,20 +26,13 @@ class DeckActionReceiver : BroadcastReceiver() {
                 // 1. Immediately shut down foreground service and dismiss notification synchronously
                 ScreenDeckForegroundService.activeInstance?.shutdownAndClearNotification()
 
-                // 2. Clear any lingering system notification explicitly
-                val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-                nm?.cancel(4041)
-                nm?.cancelAll()
-
-                // 3. Persist master power switch to OFF
+                // 2. Persist master power switch OFF and clear all overrides
                 controller.setMasterEnabled(false)
-
-                // 4. Clear all active rotation locks and immersive overrides
                 controller.disableAllOverrides()
 
-                // 5. Ensure service is stopped if instance wasn't cached
-                val serviceIntent = Intent(context, ScreenDeckForegroundService::class.java)
-                context.stopService(serviceIntent)
+                // 3. Force-clear system notification for immediate feedback
+                val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+                nm?.cancel(4041)
             }
         }
     }

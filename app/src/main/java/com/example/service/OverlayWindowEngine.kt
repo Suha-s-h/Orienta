@@ -1,7 +1,6 @@
 package com.example.service
 
 import android.content.Context
-import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.os.Build
@@ -188,10 +187,6 @@ class OverlayWindowEngine(
             isFocusable = false
             isFocusableInTouchMode = false
             setBackgroundColor(Color.TRANSPARENT)
-            setOnApplyWindowInsetsListener { v, insets ->
-                currentImmersive?.let { applySystemUiFlagsToView(v, it) }
-                insets
-            }
         }
 
         if (immersiveHostView == null) {
@@ -250,26 +245,6 @@ class OverlayWindowEngine(
     val isImmersivePausedForKeyboard: Boolean
         get() = isPausedForKeyboard
 
-    private fun buildEdgeMaskParams(heightPx: Int, gravityEdge: Int): WindowManager.LayoutParams {
-        return WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            heightPx.coerceAtLeast(1),
-            overlayWindowType,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-            PixelFormat.OPAQUE
-        ).apply {
-            gravity = gravityEdge or Gravity.START
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                layoutInDisplayCutoutMode =
-                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-            }
-        }
-    }
-
     private fun applySystemUiFlagsToView(view: View, mode: ImmersiveMode) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -309,15 +284,6 @@ class OverlayWindowEngine(
         } catch (_: Exception) {
             // Safe fallback across vendor WindowManager differences
         }
-    }
-
-    private fun getSystemBarHeightPx(resourceName: String, fallbackDp: Int): Int {
-        val resId = context.resources.getIdentifier(resourceName, "dimen", "android")
-        if (resId > 0) {
-            val px = context.resources.getDimensionPixelSize(resId)
-            if (px > 0) return px
-        }
-        return (fallbackDp * context.resources.displayMetrics.density).toInt()
     }
 
     private fun addViewSafe(view: View, params: WindowManager.LayoutParams): Boolean {

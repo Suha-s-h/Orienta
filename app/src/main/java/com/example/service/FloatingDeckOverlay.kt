@@ -125,9 +125,9 @@ class FloatingDeckOverlay(
             val isAmberActive = state.preferences.guardEnabled && state.effectiveRotationMode.isForcedLock
             val isCyanActive = state.effectiveImmersiveMode.isImmersiveActive
             val strokeColor = when {
-                isAmberActive -> Color.parseColor("#F5A524")
-                isCyanActive -> Color.parseColor("#22D3EE")
-                else -> Color.parseColor("#475569")
+                isAmberActive -> OverlayColors.AMBER
+                isCyanActive -> OverlayColors.CYAN
+                else -> OverlayColors.SLATE_STROKE
             }
 
             val handle = TextView(context).apply {
@@ -138,9 +138,9 @@ class FloatingDeckOverlay(
                 }
                 setTextColor(
                     when {
-                        isAmberActive -> Color.parseColor("#F5A524")
-                        isCyanActive -> Color.parseColor("#22D3EE")
-                        else -> Color.parseColor("#F1F5F9")
+                        isAmberActive -> OverlayColors.AMBER
+                        isCyanActive -> OverlayColors.CYAN
+                        else -> OverlayColors.INK_PRIMARY
                     }
                 )
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, if (sizePx < dp(44)) 9f else 10f)
@@ -149,7 +149,7 @@ class FloatingDeckOverlay(
                 gravity = Gravity.CENTER
                 background = GradientDrawable().apply {
                     shape = GradientDrawable.OVAL
-                    setColor(Color.parseColor("#EE14181F"))
+                    setColor(OverlayColors.HANDLE_BG)
                     setStroke(dp(2), strokeColor)
                 }
                 elevation = dp(6).toFloat()
@@ -164,8 +164,8 @@ class FloatingDeckOverlay(
                 background = GradientDrawable().apply {
                     shape = GradientDrawable.RECTANGLE
                     cornerRadius = dp(18).toFloat()
-                    setColor(Color.parseColor("#F20B0D10"))
-                    setStroke(dp(1), Color.parseColor("#2A3240"))
+                    setColor(OverlayColors.PANEL_BG)
+                    setStroke(dp(1), OverlayColors.PANEL_STROKE)
                 }
             }
 
@@ -176,12 +176,12 @@ class FloatingDeckOverlay(
             }
             val title = TextView(context).apply {
                 text = "ORIENTA • ${state.effectiveRotationMode.shortLabel}"
-                setTextColor(Color.parseColor("#F1F5F9"))
+                setTextColor(OverlayColors.INK_PRIMARY)
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f)
                 typeface = Typeface.MONOSPACE
                 setTypeface(typeface, Typeface.BOLD)
             }
-            val collapseBtn = buildChip("−", false, "#94A3B8") {
+            val collapseBtn = buildChip("−", false, OverlayColors.INK_SECONDARY) {
                 isExpanded = false
                 refreshContentOnMain(lastState)
             }
@@ -194,23 +194,23 @@ class FloatingDeckOverlay(
                 orientation = LinearLayout.HORIZONTAL
             }
             row1.addView(
-                buildChip("GUARD", state.preferences.guardEnabled, "#F5A524") { onToggleGuard() },
+                buildChip("GUARD", state.preferences.guardEnabled, OverlayColors.AMBER) { onToggleGuard() },
                 chipParams(endMargin = 4)
             )
             row1.addView(
-                buildChip("AUTO", state.effectiveRotationMode == RotationMode.AUTO_SYSTEM, "#F5A524") {
+                buildChip("AUTO", state.effectiveRotationMode == RotationMode.AUTO_SYSTEM, OverlayColors.AMBER) {
                     onSelectRotation(RotationMode.AUTO_SYSTEM)
                 },
                 chipParams(endMargin = 4)
             )
             row1.addView(
-                buildChip("PORT", state.effectiveRotationMode == RotationMode.PORTRAIT, "#F5A524") {
+                buildChip("PORT", state.effectiveRotationMode == RotationMode.PORTRAIT, OverlayColors.AMBER) {
                     onSelectRotation(RotationMode.PORTRAIT)
                 },
                 chipParams(endMargin = 4)
             )
             row1.addView(
-                buildChip("LAND", state.effectiveRotationMode == RotationMode.LANDSCAPE, "#F5A524") {
+                buildChip("LAND", state.effectiveRotationMode == RotationMode.LANDSCAPE, OverlayColors.AMBER) {
                     onSelectRotation(RotationMode.LANDSCAPE)
                 },
                 chipParams(endMargin = 0)
@@ -222,13 +222,13 @@ class FloatingDeckOverlay(
                 setPadding(0, dp(6), 0, 0)
             }
             row2.addView(
-                buildChip("4-WAY", state.effectiveRotationMode == RotationMode.FULL_SENSOR, "#F5A524") {
+                buildChip("4-WAY", state.effectiveRotationMode == RotationMode.FULL_SENSOR, OverlayColors.AMBER) {
                     onSelectRotation(RotationMode.FULL_SENSOR)
                 },
                 chipParams(endMargin = 4)
             )
             row2.addView(
-                buildChip("R-LAND", state.effectiveRotationMode == RotationMode.REVERSE_LANDSCAPE, "#F5A524") {
+                buildChip("R-LAND", state.effectiveRotationMode == RotationMode.REVERSE_LANDSCAPE, OverlayColors.AMBER) {
                     onSelectRotation(RotationMode.REVERSE_LANDSCAPE)
                 },
                 chipParams(endMargin = 4)
@@ -237,12 +237,12 @@ class FloatingDeckOverlay(
                 buildChip(
                     label = if (state.effectiveImmersiveMode.isImmersiveActive) state.effectiveImmersiveMode.shortLabel else "FULL",
                     active = state.effectiveImmersiveMode.isImmersiveActive,
-                    accentHex = "#22D3EE"
+                    accentColor = OverlayColors.CYAN
                 ) { onCycleImmersive() },
                 chipParams(endMargin = 4)
             )
             row2.addView(
-                buildChip("PIN", state.activeAppRulePackage != null, "#34D399") {
+                buildChip("PIN", state.activeAppRulePackage != null, OverlayColors.EMERALD) {
                     onPinCurrentApp()
                 },
                 chipParams(endMargin = 0)
@@ -251,7 +251,7 @@ class FloatingDeckOverlay(
 
             val footer = TextView(context).apply {
                 text = "Hide Floating Control"
-                setTextColor(Color.parseColor("#94A3B8"))
+                setTextColor(OverlayColors.INK_SECONDARY)
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f)
                 gravity = Gravity.CENTER
                 setPadding(dp(8), dp(8), dp(8), dp(2))
@@ -280,14 +280,13 @@ class FloatingDeckOverlay(
     private fun buildChip(
         label: String,
         active: Boolean,
-        accentHex: String,
+        accentColor: Int,
         onClick: () -> Unit
     ): TextView {
-        val accent = Color.parseColor(accentHex)
-        val fill = if (active) Color.argb(56, Color.red(accent), Color.green(accent), Color.blue(accent))
-        else Color.parseColor("#1C222C")
-        val stroke = if (active) accent else Color.parseColor("#2A3240")
-        val textColor = if (active) accent else Color.parseColor("#F1F5F9")
+        val fill = if (active) Color.argb(56, Color.red(accentColor), Color.green(accentColor), Color.blue(accentColor))
+        else OverlayColors.CHIP_BG
+        val stroke = if (active) accentColor else OverlayColors.PANEL_STROKE
+        val textColor = if (active) accentColor else OverlayColors.INK_PRIMARY
 
         return TextView(context).apply {
             text = label
@@ -407,5 +406,18 @@ class FloatingDeckOverlay(
         rootView = null
         layoutParams = null
         isExpanded = false
+    }
+
+    private object OverlayColors {
+        val AMBER = Color.parseColor("#F5A524")
+        val CYAN = Color.parseColor("#22D3EE")
+        val EMERALD = Color.parseColor("#34D399")
+        val SLATE_STROKE = Color.parseColor("#475569")
+        val INK_PRIMARY = Color.parseColor("#F1F5F9")
+        val INK_SECONDARY = Color.parseColor("#94A3B8")
+        val HANDLE_BG = Color.parseColor("#EE14181F")
+        val PANEL_BG = Color.parseColor("#F20B0D10")
+        val PANEL_STROKE = Color.parseColor("#2A3240")
+        val CHIP_BG = Color.parseColor("#1C222C")
     }
 }

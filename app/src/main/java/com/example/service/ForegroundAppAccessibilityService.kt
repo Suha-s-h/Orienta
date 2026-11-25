@@ -81,7 +81,11 @@ class ForegroundAppAccessibilityService : AccessibilityService() {
             addAction(Intent.ACTION_SCREEN_OFF)
             addAction(Intent.ACTION_SCREEN_ON)
         }
-        registerReceiver(screenReceiver, filter)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            registerReceiver(screenReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(screenReceiver, filter)
+        }
 
         val controller = (application as? ScreenDeckApplication)?.controller
         controller?.refreshPermissions()
@@ -240,10 +244,7 @@ class ForegroundAppAccessibilityService : AccessibilityService() {
             "android"
         )
 
-        fun applyOverlayFallbackIfNeeded(
-            state: DeckRuntimeState,
-            hasSystemOverlayPermission: Boolean
-        ) {
+        fun applyOverlayFallbackIfNeeded(state: DeckRuntimeState) {
             activeInstance?.applyImmersiveOverlay(state)
         }
     }

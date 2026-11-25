@@ -38,40 +38,12 @@ class DeckPreferencesStore(private val context: Context) {
     }
 
     val preferencesFlow: Flow<DeckPreferences> = context.screenDeckDataStore.data.map { prefs ->
-        DeckPreferences(
-            masterEnabled = prefs[Keys.MASTER_ENABLED] ?: true,
-            guardEnabled = prefs[Keys.GUARD_ENABLED] ?: false,
-            globalRotationMode = RotationMode.fromNameOrDefault(prefs[Keys.GLOBAL_ROTATION]),
-            globalImmersiveMode = ImmersiveMode.fromNameOrDefault(prefs[Keys.GLOBAL_IMMERSIVE]),
-            notificationBarEnabled = prefs[Keys.NOTIFICATION_BAR] ?: true,
-            floatingDeckEnabled = prefs[Keys.FLOATING_ENABLED] ?: false,
-            floatingOpacity = (prefs[Keys.FLOATING_OPACITY] ?: 0.88f).coerceIn(0.35f, 1.0f),
-            floatingSize = FloatingDeckSize.fromNameOrDefault(prefs[Keys.FLOATING_SIZE]),
-            floatingSnapToEdge = prefs[Keys.FLOATING_SNAP] ?: true,
-            startOnBoot = prefs[Keys.START_ON_BOOT] ?: false,
-            syncSystemAutoRotate = prefs[Keys.SYNC_AUTO_ROTATE] ?: true,
-            oledEdgeMaskEnabled = prefs[Keys.OLED_EDGE_MASK] ?: false,
-            hapticsEnabled = prefs[Keys.HAPTICS_ENABLED] ?: true
-        )
+        prefs.toDeckPreferences()
     }
 
     suspend fun update(transform: (DeckPreferences) -> DeckPreferences) {
         context.screenDeckDataStore.edit { mutable ->
-            val current = DeckPreferences(
-                masterEnabled = mutable[Keys.MASTER_ENABLED] ?: true,
-                guardEnabled = mutable[Keys.GUARD_ENABLED] ?: false,
-                globalRotationMode = RotationMode.fromNameOrDefault(mutable[Keys.GLOBAL_ROTATION]),
-                globalImmersiveMode = ImmersiveMode.fromNameOrDefault(mutable[Keys.GLOBAL_IMMERSIVE]),
-                notificationBarEnabled = mutable[Keys.NOTIFICATION_BAR] ?: true,
-                floatingDeckEnabled = mutable[Keys.FLOATING_ENABLED] ?: false,
-                floatingOpacity = (mutable[Keys.FLOATING_OPACITY] ?: 0.88f).coerceIn(0.35f, 1.0f),
-                floatingSize = FloatingDeckSize.fromNameOrDefault(mutable[Keys.FLOATING_SIZE]),
-                floatingSnapToEdge = mutable[Keys.FLOATING_SNAP] ?: true,
-                startOnBoot = mutable[Keys.START_ON_BOOT] ?: false,
-                syncSystemAutoRotate = mutable[Keys.SYNC_AUTO_ROTATE] ?: true,
-                oledEdgeMaskEnabled = mutable[Keys.OLED_EDGE_MASK] ?: false,
-                hapticsEnabled = mutable[Keys.HAPTICS_ENABLED] ?: true
-            )
+            val current = mutable.toDeckPreferences()
             val next = transform(current)
             mutable[Keys.MASTER_ENABLED] = next.masterEnabled
             mutable[Keys.GUARD_ENABLED] = next.guardEnabled
@@ -88,4 +60,20 @@ class DeckPreferencesStore(private val context: Context) {
             mutable[Keys.HAPTICS_ENABLED] = next.hapticsEnabled
         }
     }
+
+    private fun Preferences.toDeckPreferences(): DeckPreferences = DeckPreferences(
+        masterEnabled = this[Keys.MASTER_ENABLED] ?: true,
+        guardEnabled = this[Keys.GUARD_ENABLED] ?: false,
+        globalRotationMode = RotationMode.fromNameOrDefault(this[Keys.GLOBAL_ROTATION]),
+        globalImmersiveMode = ImmersiveMode.fromNameOrDefault(this[Keys.GLOBAL_IMMERSIVE]),
+        notificationBarEnabled = this[Keys.NOTIFICATION_BAR] ?: true,
+        floatingDeckEnabled = this[Keys.FLOATING_ENABLED] ?: false,
+        floatingOpacity = (this[Keys.FLOATING_OPACITY] ?: 0.88f).coerceIn(0.35f, 1.0f),
+        floatingSize = FloatingDeckSize.fromNameOrDefault(this[Keys.FLOATING_SIZE]),
+        floatingSnapToEdge = this[Keys.FLOATING_SNAP] ?: true,
+        startOnBoot = this[Keys.START_ON_BOOT] ?: false,
+        syncSystemAutoRotate = this[Keys.SYNC_AUTO_ROTATE] ?: true,
+        oledEdgeMaskEnabled = this[Keys.OLED_EDGE_MASK] ?: false,
+        hapticsEnabled = this[Keys.HAPTICS_ENABLED] ?: true
+    )
 }

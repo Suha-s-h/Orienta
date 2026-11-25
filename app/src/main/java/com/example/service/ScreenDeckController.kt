@@ -19,59 +19,70 @@ import com.example.tile.ImmersiveQuickTileService
 import com.example.tile.RotationQuickTileService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+@OptIn(FlowPreview::class)
 class ScreenDeckController(
     private val context: Context,
     val repository: ScreenDeckRepository
 ) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private data class ForegroundApp(val packageName: String, val label: String)
 
-    private val foregroundPackageFlow = MutableStateFlow<String?>(null)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
+    private val foregroundAppFlow = MutableStateFlow<ForegroundApp?>(null)
     private val serviceRunningFlow = MutableStateFlow(false)
     private val permissionsFlow = MutableStateFlow(PermissionInspector.inspect(context))
 
     val appRulesFlow: StateFlow<List<AppRuleEntity>> = repository.appRulesFlow.stateIn(
         scope = scope,
-        started = SharingStarted.WhileSubscribed(5_000),
+        started = SharingStarted.Eagerly,
         initialValue = emptyList()
     )
 
     val runtimeState: StateFlow<DeckRuntimeState> = combine(
         repository.preferencesFlow,
         appRulesFlow,
-        foregroundPackageFlow,
+        foregroundAppFlow,
         serviceRunningFlow,
         permissionsFlow
-    ) { prefs, rules, fgPkg, isRunning, permissions ->
-        resolveRuntimeState(prefs, rules, fgPkg, isRunning, permissions)
-    }.stateIn(
-        scope = scope,
-        started = SharingStarted.Eagerly,
-        initialValue = DeckRuntimeState(permissions = PermissionInspector.inspect(context))
-    )
+    ) { prefs, rules, fgApp, isRunning, permissions ->
+        resolveRuntimeState(prefs, rules, fgApp, isRunning, permissions)
+    }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = scope,
+            started = SharingStarted.Eagerly,
+            initialValue = DeckRuntimeState(permissions = PermissionInspector.inspect(context))
+        )
 
     init {
         scope.launch {
-            runtimeState.collect { state ->
-                applySideEffects(state)
-            }
+            runtimeState
+                .debounce(50L)
+                .collect { state ->
+                    applySideEffects(state)
+                }
         }
     }
 
     private fun resolveRuntimeState(
         prefs: DeckPreferences,
         rules: List<AppRuleEntity>,
-        fgPkg: String?,
+        fgApp: ForegroundApp?,
         isRunning: Boolean,
         permissions: PermissionDiagnostics
     ): DeckRuntimeState {
+        val fgPkg = fgApp?.packageName
         if (!prefs.masterEnabled) {
             return DeckRuntimeState(
                 preferences = prefs,
@@ -80,7 +91,7 @@ class ScreenDeckController(
                 activeSourceLabel = "Orienta Standby",
                 activeAppRulePackage = null,
                 foregroundPackage = fgPkg,
-                foregroundAppLabel = fgPkg?.let { repository.resolveAppLabel(it) },
+                foregroundAppLabel = fgApp?.label,
                 isServiceRunning = isRunning,
                 permissions = permissions
             )
@@ -114,9 +125,7 @@ class ScreenDeckController(
             }
         }
 
-        val fgLabel = fgPkg?.let {
-            matchingRule?.appLabel ?: repository.resolveAppLabel(it)
-        }
+        val fgLabel = fgApp?.let { matchingRule?.appLabel ?: it.label }
 
         return DeckRuntimeState(
             preferences = prefs,
@@ -131,6 +140,10 @@ class ScreenDeckController(
         )
     }
 
+    private var lastSyncedAutoRotateKey: Triple<RotationMode, Boolean, Boolean>? = null
+    private var lastSyncedImmersiveMode: ImmersiveMode? = null
+    private var lastTileKey: Triple<Boolean, RotationMode, ImmersiveMode>? = null
+
     private fun applySideEffects(state: DeckRuntimeState) {
         val masterOn = state.preferences.masterEnabled
         val shouldKeepServiceAlive = masterOn && (
@@ -140,29 +153,39 @@ class ScreenDeckController(
             state.activeAppRulePackage != null
         )
 
-        SystemScreenBridge.syncSystemAutoRotate(
-            context = context,
-            rotationMode = state.effectiveRotationMode,
-            guardActive = masterOn && (state.preferences.guardEnabled || state.activeAppRulePackage != null),
-            syncEnabled = state.preferences.syncSystemAutoRotate
-        )
-        SystemScreenBridge.applyAdbImmersiveBoostIfPermitted(
-            context = context,
-            immersiveMode = state.effectiveImmersiveMode
-        )
+        val guardActive = masterOn && (state.preferences.guardEnabled || state.activeAppRulePackage != null)
+        val autoRotateKey = Triple(state.effectiveRotationMode, guardActive, state.preferences.syncSystemAutoRotate)
+        if (autoRotateKey != lastSyncedAutoRotateKey) {
+            lastSyncedAutoRotateKey = autoRotateKey
+            SystemScreenBridge.syncSystemAutoRotate(
+                context = context,
+                rotationMode = state.effectiveRotationMode,
+                guardActive = guardActive,
+                syncEnabled = state.preferences.syncSystemAutoRotate
+            )
+        }
 
-        ForegroundAppAccessibilityService.applyOverlayFallbackIfNeeded(
-            state = state,
-            hasSystemOverlayPermission = state.permissions.hasOverlay
-        )
+        if (state.effectiveImmersiveMode != lastSyncedImmersiveMode) {
+            lastSyncedImmersiveMode = state.effectiveImmersiveMode
+            SystemScreenBridge.applyAdbImmersiveBoostIfPermitted(
+                context = context,
+                immersiveMode = state.effectiveImmersiveMode
+            )
+        }
 
-        if (shouldKeepServiceAlive && (state.permissions.hasOverlay || state.permissions.hasNotification || state.permissions.hasAccessibility)) {
+        ForegroundAppAccessibilityService.applyOverlayFallbackIfNeeded(state = state)
+
+        if (shouldKeepServiceAlive && !state.isServiceRunning && (state.permissions.hasOverlay || state.permissions.hasNotification || state.permissions.hasAccessibility)) {
             startOrUpdateForegroundService()
         } else if (!shouldKeepServiceAlive && state.isServiceRunning) {
             stopForegroundService()
         }
 
-        requestQuickSettingsTileUpdates()
+        val tileKey = Triple(state.preferences.guardEnabled, state.effectiveRotationMode, state.effectiveImmersiveMode)
+        if (tileKey != lastTileKey) {
+            lastTileKey = tileKey
+            requestQuickSettingsTileUpdates()
+        }
     }
 
     fun setMasterEnabled(enabled: Boolean) {
@@ -184,8 +207,9 @@ class ScreenDeckController(
 
     fun onForegroundAppChanged(packageName: String?) {
         if (packageName.isNullOrBlank()) return
-        if (foregroundPackageFlow.value != packageName) {
-            foregroundPackageFlow.value = packageName
+        if (foregroundAppFlow.value?.packageName != packageName) {
+            val label = repository.resolveAppLabel(packageName)
+            foregroundAppFlow.value = ForegroundApp(packageName, label)
         }
     }
 
