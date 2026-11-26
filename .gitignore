@@ -16,3 +16,16 @@
 local.properties
 .env
 debug.keystore
+
+# Internal AI workspace / IDE artifacts
+.aistudio/
+.antigravity/
+.vscode/
+
+# Build outputs & signing keys
+*.apk
+*.aab
+*.jks
+*.keystore
+app-debug.apk
+app-release*.apk

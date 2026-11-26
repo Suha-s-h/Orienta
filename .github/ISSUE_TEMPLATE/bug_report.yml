@@ -1,0 +1,55 @@
+name: Bug Report
+description: Report a crash, rotation quirk, immersive glitch, or OEM issue in Orienta
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please share your device details below so we can reproduce and fix it quickly.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected to happen.
+      placeholder: e.g., Fullscreen immersive does not re-hide the navigation bar after closing the keyboard in Chrome...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact steps to trigger the issue.
+      placeholder: |
+        1. Enable Global Guard and select Landscape
+        2. Open '...'
+        3. Observe '...'
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device & OS / ROM
+      description: Manufacturer, model, Android version, and OEM skin.
+      placeholder: e.g., Pixel 8 (Android 15), Samsung S24 (One UI 7), POCO F5 (HyperOS)
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: Orienta Version
+      description: Found on your installed APK / Release tag.
+      placeholder: e.g., v1.0 (Debug APK / Release)
+    validations:
+      required: true
+  - type: checkboxes
+    id: permissions
+    attributes:
+      label: Permissions Enabled
+      description: Which permissions are currently granted to Orienta?
+      options:
+        - label: Display over other apps (SYSTEM_ALERT_WINDOW)
+        - label: Accessibility Service (Orienta Auto-Switch & Fullscreen)
+        - label: Notifications (POST_NOTIFICATIONS)
+        - label: Modify System Settings (WRITE_SETTINGS)
+        - label: Optional ADB Boost (WRITE_SECURE_SETTINGS)

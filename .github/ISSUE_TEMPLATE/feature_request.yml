@@ -1,0 +1,30 @@
+name: Feature Request
+description: Suggest a new rotation preset, control surface improvement, or quality-of-life feature
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea that would make Orienta even better? Share the details below!
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem or use case does this solve?
+      description: Describe when and why you want this capability.
+      placeholder: e.g., When reading PDFs at night, I'd like a quick toggle to...
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How should the feature behave in the UI, floating deck, or Quick Settings?
+    validations:
+      required: true
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Offline & Root-Free Check
+      options:
+        - label: This feature works offline without requiring root or internet access
