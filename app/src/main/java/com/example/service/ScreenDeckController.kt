@@ -146,6 +146,31 @@ class ScreenDeckController(
 
     private fun applySideEffects(state: DeckRuntimeState) {
         val masterOn = state.preferences.masterEnabled
+        if (!masterOn) {
+            // Reset ADB boost once only if we previously enabled it in this session; never touch system auto-rotate.
+            if (lastSyncedImmersiveMode != null && lastSyncedImmersiveMode != ImmersiveMode.NORMAL) {
+                SystemScreenBridge.applyAdbImmersiveBoostIfPermitted(
+                    context = context,
+                    immersiveMode = ImmersiveMode.NORMAL
+                )
+            }
+            lastSyncedAutoRotateKey = null
+            lastSyncedImmersiveMode = ImmersiveMode.NORMAL
+
+            ForegroundAppAccessibilityService.applyOverlayFallbackIfNeeded(state = state)
+
+            if (state.isServiceRunning) {
+                stopForegroundService()
+            }
+
+            val tileKey = Triple(false, RotationMode.AUTO_SYSTEM, ImmersiveMode.NORMAL)
+            if (tileKey != lastTileKey) {
+                lastTileKey = tileKey
+                requestQuickSettingsTileUpdates()
+            }
+            return
+        }
+
         val shouldKeepServiceAlive = masterOn && (
             state.preferences.guardEnabled ||
             state.effectiveImmersiveMode.isImmersiveActive ||

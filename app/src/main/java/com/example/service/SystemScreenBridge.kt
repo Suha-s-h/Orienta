@@ -14,22 +14,35 @@ object SystemScreenBridge {
         return "adb shell pm grant ${context.packageName} android.permission.WRITE_SECURE_SETTINGS"
     }
 
+    internal fun resolveTargetAutoRotateValue(
+        rotationMode: RotationMode,
+        guardActive: Boolean,
+        syncEnabled: Boolean
+    ): Int? {
+        // Leave Android's native rotation setting untouched whenever Orienta isn't actively enforcing.
+        if (!syncEnabled || !guardActive) return null
+        return when (rotationMode) {
+            RotationMode.AUTO_SYSTEM,
+            RotationMode.FULL_SENSOR,
+            RotationMode.SENSOR_PORTRAIT,
+            RotationMode.SENSOR_LANDSCAPE -> 1
+            else -> 0
+        }
+    }
+
     fun syncSystemAutoRotate(
         context: Context,
         rotationMode: RotationMode,
         guardActive: Boolean,
         syncEnabled: Boolean
     ) {
-        if (!syncEnabled || !Settings.System.canWrite(context)) return
+        val autoRotateValue = resolveTargetAutoRotateValue(
+            rotationMode = rotationMode,
+            guardActive = guardActive,
+            syncEnabled = syncEnabled
+        ) ?: return
+        if (!Settings.System.canWrite(context)) return
         try {
-            val autoRotateValue = when {
-                !guardActive -> 1
-                rotationMode == RotationMode.AUTO_SYSTEM ||
-                    rotationMode == RotationMode.FULL_SENSOR ||
-                    rotationMode == RotationMode.SENSOR_PORTRAIT ||
-                    rotationMode == RotationMode.SENSOR_LANDSCAPE -> 1
-                else -> 0
-            }
             Settings.System.putInt(
                 context.contentResolver,
                 Settings.System.ACCELEROMETER_ROTATION,
